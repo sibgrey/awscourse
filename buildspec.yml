@@ -19,6 +19,7 @@ phases:
       - mvn package
 artifacts:
   files:
-    - target/FirstEC2.jar
+    - ./target/FirstEC2.jar
+    - ./*.sh
     - appspec.yml
   discard-paths: yes

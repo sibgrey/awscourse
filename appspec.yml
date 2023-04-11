@@ -1,5 +1,10 @@
 version: 0.0
 os: linux
 files:
-  - source: ./target/FirstEC2.jar
+  - source: /
     destination: /tmp
+hooks:
+  ApplicationStart:
+    - location: start_jar.sh
+      timeout: 300
+      runas: ubuntu
