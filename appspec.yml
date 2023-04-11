@@ -6,5 +6,5 @@ files:
 hooks:
   ApplicationStart:
     - location: start_jar.sh
-      timeout: 300
-      runas: ubuntu
+      timeout: 60
+      runas: root
