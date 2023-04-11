@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: aws.course.FirstEc2.FirstEc2ApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.861 s - in aws.course.FirstEc2.FirstEc2ApplicationTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.091 s - in aws.course.FirstEc2.FirstEc2ApplicationTests

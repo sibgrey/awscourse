@@ -49,6 +49,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<finalName>FirstEC2</finalName>
 	</build>
 
 </project>
