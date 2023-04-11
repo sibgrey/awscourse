@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-sudo java -jar /tmp/FirstEC2.jar
+nohup java -jar /tmp/FirstEC2.jar &
