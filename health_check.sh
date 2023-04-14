@@ -2,9 +2,9 @@
 
 while 'true'
 do
-    if [ "$(curl -s http://localhost:8080/health)" = 'Hello from EC1' ]
+    if [ "$(curl -s http://localhost:8080/health)" = 'Hello from EC2' ]
     then
-        echo "server is running!"
+        echo "Server is running!"
         exit 0
     else
         echo "check server is running?"
