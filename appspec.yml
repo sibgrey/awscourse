@@ -8,3 +8,6 @@ hooks:
     - location: start_jar.sh
       timeout: 60
       runas: root
+  ValidateService:
+    - location: health_check.sh
+      timeout: 30
