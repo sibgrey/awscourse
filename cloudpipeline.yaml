@@ -1,0 +1,377 @@
+AWSTemplateFormatVersion: 2010-09-09 # This version is a current default value for CloudFormation
+Description: "CloudPipeline implementation based on GitHub connection and EC2 deployment (https://jennapederson.com/blog/2021/11/26/using-cloudformation-to-automate-build-test-deploy-with-codepipeline-part-3/)"
+
+Parameters:
+  AvailabilityZone:
+    Description: Choose AZ, which should be used for EC2 creation
+    Type: AWS::EC2::AvailabilityZone::Name
+    Default: eu-north-1a
+  EnvironmentType:
+    Description: Choose which environment should be used
+    Type: String
+    AllowedValues:
+      - dev
+      - test
+    Default: dev
+  AmiID:
+    Description: Enter AMI id
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
+  KeyPairName:
+    Description: Choose key-pair name for EC2
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: Pair
+  TagNameValue:
+    Description: Enter tag name for EC2
+    Type: String
+    Default: EC2CloudFormation
+  CodeArtifactCentralStore:
+    Description: Enter CodeArtifact external connection
+    Type: String
+    AllowedValues:
+      - public:maven-central
+      - public:maven-gradleplugins
+    Default: public:maven-central
+  GitHubConnectionArn:
+    Description: Enter GitHub connection ARN
+    Type: String
+    Default: arn:aws:codestar-connections:eu-north-1:166601305423:connection/8cf74261-d8ef-4cd4-b062-9247dee0e76b
+  GitHubRepository:
+    Description: Enter GitHub repository name
+    Type: String
+    Default: awscourse
+  GitHubBranch:
+    Description: Enter repository branch name
+    Type: String
+    AllowedValues:
+      - master
+      - main
+    Default: master
+  GitHubUser:
+    Description: Enter GitHub user name
+    Type: String
+    Default: Competency-Development-Workshop
+
+Mappings:
+  EnvironmentToInstanceType:
+    dev:
+      InstanceType: t3.micro
+    test:
+      InstanceType: t3.micro
+
+Resources:
+  # Add this custom handlers for wait operation. CloudFormation waits for the successful signal to finalize the condition
+  #WaitHandle:
+  #  Type: AWS::CloudFormation::WaitConditionHandle
+  #WaitCondition:
+  #  Type: AWS::CloudFormation::WaitCondition
+  #  Properties:
+  #    Handle: !Ref WaitHandle
+  #    Timeout: "900"
+
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: EC2Policy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - autoscaling:Describe*
+                  - cloudformation:Describe*
+                  - cloudformation:GetTemplate
+                  - s3:Get*
+                  - s3:List*
+                Resource: "*"
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref EC2Role
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Join ["-", [ec2-security-group, !Ref EnvironmentType]]
+      GroupDescription: Allows 80, 8080, 22 ports for inbound traffic
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  EC2InstanceFromAMI:
+    Type: AWS::EC2::Instance
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone
+      ImageId: !Ref AmiID
+      InstanceType:
+        !FindInMap [
+          EnvironmentToInstanceType,
+          !Ref EnvironmentType,
+          InstanceType,
+        ]
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      SecurityGroupIds:
+        - !Ref EC2SecurityGroup
+      KeyName: !Ref KeyPairName
+      Tags:
+        - Key: Name
+          Value: !Ref TagNameValue
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash
+            # install java and ruby (for codedeploy agent)
+            sudo yum update
+            sudo yum install -y java-17-amazon-corretto-headless
+            sudo yum install -y ruby
+            # install codedeploy agent
+            wget "https://aws-codedeploy-eu-west-3.s3.eu-west-3.amazonaws.com/latest/install"
+            chmod +x ./install
+            sudo ./install auto
+            # send successful signal to process CreationPolicy
+            sudo cfn-signal --exit-code $? --stack ${AWS::StackName} --resource EC2InstanceFromAMI --region ${AWS::Region}
+            # to list available packages for java use: sudo apt search openjdk 
+            # also, please add -y flag to perform YES action on installs
+
+  # # Connection is existing, so we do not need to create a separate connection (AWS connector may be existing only one for repository)
+  # GitHubConnection:
+  #  Type: AWS::CodeStarConnections::Connection
+  #  Properties: 
+  #    ConnectionName: GitHubConnection
+  #    HostArn: 'arn:aws:codestar-connections:us-west-2:123456789123:host/abc123-example'
+  #    ProviderType: GitHub
+
+  CodeArtifactDomain:
+    Type: AWS::CodeArtifact::Domain
+    Properties:
+      DomainName: code-artifact-domain
+  CodeArtifactUpstreamRepository:
+    Type: AWS::CodeArtifact::Repository
+    Properties:
+      RepositoryName: CodeArtifactUpstreamRepository
+      DomainName: !GetAtt CodeArtifactDomain.Name
+      ExternalConnections:
+        - !Ref CodeArtifactCentralStore
+  CodeArtifactRepository:
+    Type: AWS::CodeArtifact::Repository
+    Properties:
+      RepositoryName: CodeArtifactRepository
+      DomainName: !GetAtt CodeArtifactDomain.Name
+      Upstreams:
+        - !GetAtt CodeArtifactUpstreamRepository.Name
+
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+
+  CodeBuildRole:
+      Type: AWS::IAM::Role
+      Properties:
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: 
+                  - codebuild.amazonaws.com
+              Action: 
+                - sts:AssumeRole
+        Path: /
+        Policies:
+          - PolicyName: CodeBuildLogsPolicy
+            PolicyDocument:
+              Statement:
+                  - Effect: Allow
+                    Action:
+                        - logs:CreateLogGroup
+                        - logs:CreateLogStream
+                        - logs:PutLogEvents
+                        - ecr:GetAuthorizationToken
+                        - ssm:GetParameters
+                    Resource: "*"
+          - PolicyName: CodeBuildS3Policy
+            PolicyDocument:
+              Statement:
+                  - Effect: Allow
+                    Action:
+                        - s3:GetObject
+                        - s3:PutObject
+                        - s3:GetObjectVersion
+                    Resource: !Sub arn:aws:s3:::${S3Bucket}/*
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yml
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:6.0
+        Type: LINUX_CONTAINER
+      Name: !Ref AWS::StackName
+      ServiceRole: !Ref CodeBuildRole
+
+  CodeDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - !Join ["", [codedeploy., !Ref AWS::Region, .amazonaws.com]]
+                # - !Sub codedeploy.${AWS::Region}.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: CodeDeployPolicy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:Describe*
+                  - autoscaling:CompleteLifecycleAction
+                  - autoscaling:DeleteLifecycleHook
+                  - autoscaling:DescribeLifecycleHooks
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:PutLifecycleHook
+                  - autoscaling:RecordLifecycleActionHeartbeat
+                Resource: "*"
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+  CodeDeployGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref CodeDeployApplication
+      Ec2TagFilters:
+        - Key: Name
+          Value: !Ref TagNameValue
+          Type: KEY_AND_VALUE
+      ServiceRoleArn: !GetAtt CodeDeployRole.Arn
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: 
+                - codepipeline.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: CodePipelinePolicy
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource:
+                  - !Sub arn:aws:s3:::${S3Bucket}/*
+                  - !Sub arn:aws:s3:::${S3Bucket}
+              - Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - iam:PassRole
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - codestar-connections:UseConnection
+                Resource:
+                  - !Ref GitHubConnectionArn  # This ARN can be replaced with Connection resource
+              - Effect: Allow
+                Action:
+                  - codedeploy:CreateDeployment
+                  - codedeploy:CreateDeploymentGroup
+                  - codedeploy:GetApplication
+                  - codedeploy:GetApplicationRevision
+                  - codedeploy:GetDeployment
+                  - codedeploy:GetDeploymentConfig
+                  - codedeploy:RegisterApplicationRevision
+                Resource: "*"
+  CodePipelineForApplication:
+    Type: AWS::CodePipeline::Pipeline
+    DependsOn: EC2InstanceFromAMI
+    Properties:
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref S3Bucket
+      Stages:
+        - Name: Pull
+          Actions:
+            - Name: PullGithubChanges
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: CodeStarSourceConnection
+              Configuration:
+                ConnectionArn: !Ref GitHubConnectionArn # This ARN can be replaced with Connection resource
+                BranchName: !Ref GitHubBranch
+                FullRepositoryId: !Sub ${GitHubUser}/${GitHubRepository}
+              OutputArtifacts:
+                - Name: ApplicationArtifact
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: BuildApplication
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: ApplicationArtifact
+              OutputArtifacts:
+                - Name: ApplicationBuildArtifact
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: DeployApplication
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CodeDeploy
+              Configuration:
+                ApplicationName: !Ref CodeDeployApplication
+                DeploymentGroupName: !Ref CodeDeployGroup
+              InputArtifacts:
+                - Name: ApplicationBuildArtifact
+              RunOrder: 1
+
+Outputs:
+  PipelineForApplicationUrl:
+    Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${CodePipelineForApplication}
+  WebsiteURL:
+    Value: !Sub http://${EC2InstanceFromAMI.PublicIp}:8080/health
