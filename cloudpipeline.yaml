@@ -13,14 +13,6 @@ Parameters:
       - dev
       - test
     Default: dev
-  AmiID:
-    Description: Enter AMI id
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
-  KeyPairName:
-    Description: Choose key-pair name for EC2
-    Type: AWS::EC2::KeyPair::KeyName
-    Default: Pair
   TagNameValue:
     Description: Enter tag name for EC2
     Type: String
@@ -52,117 +44,7 @@ Parameters:
     Type: String
     Default: Competency-Development-Workshop
 
-Mappings:
-  EnvironmentToInstanceType:
-    dev:
-      InstanceType: t3.micro
-    test:
-      InstanceType: t3.micro
-
 Resources:
-  # Add this custom handlers for wait operation. CloudFormation waits for the successful signal to finalize the condition
-  #WaitHandle:
-  #  Type: AWS::CloudFormation::WaitConditionHandle
-  #WaitCondition:
-  #  Type: AWS::CloudFormation::WaitCondition
-  #  Properties:
-  #    Handle: !Ref WaitHandle
-  #    Timeout: "900"
-
-  EC2Role:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ec2.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: EC2Policy
-          PolicyDocument:
-            Statement:
-              - Effect: Allow
-                Action:
-                  - autoscaling:Describe*
-                  - cloudformation:Describe*
-                  - cloudformation:GetTemplate
-                  - s3:Get*
-                  - s3:List*
-                Resource: "*"
-  EC2InstanceProfile:
-    Type: AWS::IAM::InstanceProfile
-    Properties:
-      Path: /
-      Roles:
-        - !Ref EC2Role
-  EC2SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupName: !Join ["-", [ec2-security-group, !Ref EnvironmentType]]
-      GroupDescription: Allows 80, 8080, 22 ports for inbound traffic
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 8080
-          ToPort: 8080
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-  EC2InstanceFromAMI:
-    Type: AWS::EC2::Instance
-    CreationPolicy:
-      ResourceSignal:
-        Timeout: PT5M
-    Properties:
-      AvailabilityZone: !Ref AvailabilityZone
-      ImageId: !Ref AmiID
-      InstanceType:
-        !FindInMap [
-          EnvironmentToInstanceType,
-          !Ref EnvironmentType,
-          InstanceType,
-        ]
-      IamInstanceProfile: !Ref EC2InstanceProfile
-      SecurityGroupIds:
-        - !Ref EC2SecurityGroup
-      KeyName: !Ref KeyPairName
-      Tags:
-        - Key: Name
-          Value: !Ref TagNameValue
-      UserData:
-        Fn::Base64:
-          !Sub |
-            #!/bin/bash
-            # install java and ruby (for codedeploy agent)
-            sudo yum update
-            sudo yum install -y java-17-amazon-corretto-headless
-            sudo yum install -y ruby
-            # install codedeploy agent
-            wget "https://aws-codedeploy-eu-west-3.s3.eu-west-3.amazonaws.com/latest/install"
-            chmod +x ./install
-            sudo ./install auto
-            # send successful signal to process CreationPolicy
-            sudo cfn-signal --exit-code $? --stack ${AWS::StackName} --resource EC2InstanceFromAMI --region ${AWS::Region}
-            # to list available packages for java use: sudo apt search openjdk 
-            # also, please add -y flag to perform YES action on installs
-
-  # # Connection is existing, so we do not need to create a separate connection (AWS connector may be existing only one for repository)
-  # GitHubConnection:
-  #  Type: AWS::CodeStarConnections::Connection
-  #  Properties: 
-  #    ConnectionName: GitHubConnection
-  #    HostArn: 'arn:aws:codestar-connections:us-west-2:123456789123:host/abc123-example'
-  #    ProviderType: GitHub
-
   CodeArtifactDomain:
     Type: AWS::CodeArtifact::Domain
     Properties:
@@ -373,5 +255,3 @@ Resources:
 Outputs:
   PipelineForApplicationUrl:
     Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${CodePipelineForApplication}
-  WebsiteURL:
-    Value: !Sub http://${EC2InstanceFromAMI.PublicIp}:8080/health
