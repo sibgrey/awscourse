@@ -1,13 +1,13 @@
-package aws.course.FirstEc2;
+package com.billing.billingservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class FirstEc2Application {
+public class BillingServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(FirstEc2Application.class, args);
+		SpringApplication.run(BillingServiceApplication.class, args);
 	}
 
 }

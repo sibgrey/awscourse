@@ -5,10 +5,10 @@ phases:
     runtime-versions:
       java: corretto17
     commands:
-      - echo "installing java 17"
+      - echo "Installing Java 17"
   pre_build:
     commands:
-      - echo "we are in the pre build phase"
+      - echo "Pre-build"
   build:
     commands:
       - echo Build started on `date`
@@ -19,7 +19,7 @@ phases:
       - mvn package
 artifacts:
   files:
-    - ./target/FirstEC2.jar
+    - ./target/billing-service.jar
     - ./*.sh
     - appspec.yml
   discard-paths: yes

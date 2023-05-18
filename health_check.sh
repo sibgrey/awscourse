@@ -2,12 +2,12 @@
 
 while 'true'
 do
-    if [ "$(curl -s http://localhost:8080/health)" = 'Hello from EC2' ]
+    if [ "$(curl -s http://localhost:8080/actuator/health)" = '{"status":"UP"}' ]
     then
-        echo "Server is running!"
+        echo "Application is running!"
         exit 0
     else
-        echo "check server is running?"
+        echo "Checking application status..."
         sleep 3s
     fi
 done
