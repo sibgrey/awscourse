@@ -3,6 +3,7 @@ os: linux
 files:
   - source: /
     destination: /tmp
+file_exists_behavior: OVERWRITE
 hooks:
   ApplicationStop:
     - location: stop_jar.sh
