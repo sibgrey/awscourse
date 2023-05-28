@@ -20,6 +20,7 @@ phases:
 artifacts:
   files:
     - ./target/billing-service.jar
-    - ./*.sh
+    - ./scripts/*.sh
+    - ./.aws/amazon-cloudwatch-agent.json
     - appspec.yml
   discard-paths: yes

@@ -4,10 +4,14 @@ files:
   - source: /
     destination: /tmp
 hooks:
+  ApplicationStop:
+    - location: scripts/stop_jar.sh
+      timeout: 20
+      runas: root
   ApplicationStart:
-    - location: start_jar.sh
+    - location: scripts/start_jar.sh
       timeout: 60
       runas: root
   ValidateService:
-    - location: health_check.sh
+    - location: scripts/health_check.sh
       timeout: 30
