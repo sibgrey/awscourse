@@ -10,3 +10,4 @@ then
 else
   echo "No running applications was found for the deployment group name!"
 fi
+exit 0
