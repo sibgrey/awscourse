@@ -1,4 +1,4 @@
-package com.billing.billingservice.domain;
+package com.awscourse.domain;
 
 import java.io.Serializable;
 

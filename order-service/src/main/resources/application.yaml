@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: orderservice
+logging:
+  pattern:
+    console: '%d{dd-MM-yyyy HH:mm:ss} %-5level >> %logger{36} - %msg%n'
+  file:
+    name: "${logging.file.path}java-logs-${spring.profiles.active}.log"
+
+cloud:
+  aws:
+    region:
+      static: eu-north-1
+      auto: false

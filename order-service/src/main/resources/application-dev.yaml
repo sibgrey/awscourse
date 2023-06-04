@@ -1,0 +1,7 @@
+spring:
+  config:
+    import: application.yaml
+
+logging:
+  file:
+    path: /home/ec2-user/${spring:application:name}/logs/

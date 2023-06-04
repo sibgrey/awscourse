@@ -1,12 +1,15 @@
-package com.billing.billingservice;
+package com.awscourse;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * IMPORTANT! Run application within 'local' or 'dev' profile.
  */
-@SpringBootApplication
+@EnableScheduling
+@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class })
 public class BillingServiceApplication {
 
     public static void main(String[] args) {
