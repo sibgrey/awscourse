@@ -1,7 +1,6 @@
 package com.awscourse.configuration;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.sqs.AmazonSQSAsync;
 import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder;
@@ -10,12 +9,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-@Profile({"default", "local"})
+@Profile({"dev"})
 @Configuration
-public class SqsConfiguration {
-
-    @Value("${aws.profile:default}")
-    private String profile;
+public class DevSqsConfiguration {
 
     @Value("${cloud.aws.region.static}")
     private String region;
@@ -27,7 +23,7 @@ public class SqsConfiguration {
         return AmazonSQSAsyncClientBuilder
                 .standard()
                 .withRegion(region)
-                .withCredentials(new ProfileCredentialsProvider(profile))
+                .withCredentials(new InstanceProfileCredentialsProvider(true))
                 .build();
     }
 }
