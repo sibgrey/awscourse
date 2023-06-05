@@ -19,8 +19,8 @@ public class MessageSender {
     private static final Logger logger
             = LoggerFactory.getLogger(MessageSender.class);
 
-    @Value("${sqs.queue.name}")
-    private String queueName;
+    @Value("${sqs.queue.url}")
+    private String queueUrl;
     private final AmazonSQSAsync amazonSqs;
 
     @Autowired
@@ -30,7 +30,7 @@ public class MessageSender {
 
     public boolean send(final Order order) throws JsonProcessingException {
         MessageChannel messageChannel
-                = new QueueMessageChannel(amazonSqs, queueName);
+                = new QueueMessageChannel(amazonSqs, queueUrl);
 
         String orderJson =  new ObjectMapper().writer().withDefaultPrettyPrinter().writeValueAsString(order);
 
