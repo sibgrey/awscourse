@@ -19,7 +19,8 @@ phases:
       - mvn package
 artifacts:
   files:
-    - ./target/billing-service.jar
+    - ./billing-service/target/billing-service.jar
+    - ./order-service/target/order-service.jar
     - ./scripts/*.sh
     - ./.aws/amazon-cloudwatch-agent.json
     - appspec.yml
