@@ -5,3 +5,8 @@ spring:
 logging:
   file:
     path: /home/ec2-user/${spring:application:name}/logs/
+
+cloud:
+  aws:
+    credentials:
+      instanceProfile: true

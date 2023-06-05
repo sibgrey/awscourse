@@ -1,4 +1,4 @@
-package com.awscourse.controller;
+package com.awscourse.configuration;
 
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.services.sqs.AmazonSQSAsync;
@@ -6,9 +6,11 @@ import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
+@Profile({"default", "local"})
 @Configuration
-public class SqsConfiguration {
+public class LocalSqsConfiguration {
 
     @Value("${aws.profile:default}")
     private String profile;
