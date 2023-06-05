@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.aws.messaging.core.QueueMessageChannel;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -18,9 +19,8 @@ public class MessageSender {
     private static final Logger logger
             = LoggerFactory.getLogger(MessageSender.class);
 
-    private static final String QUEUE_URL
-            = "https://sqs.eu-north-1.amazonaws.com/166601305423/SQS-Stack-SQSQueue-1bIgfVAjRzpg";
-
+    @Value("${sqs.queue.name}")
+    private String queueName;
     private final AmazonSQSAsync amazonSqs;
 
     @Autowired
@@ -30,7 +30,7 @@ public class MessageSender {
 
     public boolean send(final Order order) throws JsonProcessingException {
         MessageChannel messageChannel
-                = new QueueMessageChannel(amazonSqs, QUEUE_URL);
+                = new QueueMessageChannel(amazonSqs, queueName);
 
         String orderJson =  new ObjectMapper().writer().withDefaultPrettyPrinter().writeValueAsString(order);
 

@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * IMPORTANT! Run application within 'local' or 'dev' profile.
  */
 @EnableScheduling
-@SpringBootApplication(exclude = {DataSourceAutoConfiguration.class })
+@SpringBootApplication
 public class BillingServiceApplication {
 
     public static void main(String[] args) {
