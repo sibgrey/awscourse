@@ -26,7 +26,8 @@ $(document).ready(function () {
         $('.play-button').unbind("click").on('click', openPlayer);
         $('.delete-button').unbind("click").on('click', deletePicture);
         hideAppearingElements();
-    }
+        bindForMobileDevices();
+    };
 
     // TO_BE_REMOVED_START
     let pictures = [
@@ -81,6 +82,14 @@ $(document).ready(function () {
 
     checkIfLoadMoreRequired();
 
+    function checkIfLoadMoreRequired() {
+        if (pictures.length > 0) {
+            $('#load-more').show();
+        } else {
+            $('#load-more').hide();
+        }
+    };
+
     function openDescription() {
         // TODO: Call POST for description
         /*post('urlToApiGateway', null, function (data) {
@@ -99,7 +108,7 @@ $(document).ready(function () {
         parent.find('.hover-buttons').toggle();
         parent.find('.description').addClass('appear-animation').toggle();
         // TO_BE_REMOVED_END
-    }
+    };
 
     function openPlayer() {
         // TODO: Call POST for description
@@ -114,7 +123,7 @@ $(document).ready(function () {
         parent.find('.hover-buttons').toggle();
         parent.find('.audio').addClass('appear-animation').append('<audio id="audio" src="" controls></audio>').toggle();
         // TO_BE_REMOVED_END
-    }
+    };
 
     function deletePicture() {
         // TODO: Call POST for delete
@@ -133,26 +142,29 @@ $(document).ready(function () {
             parent.remove();
         }, 500);
         // TO_BE_REMOVED_END
-    }
+    };
 
     function bindExpandedImage() {
         var parent = $(this).closest('img');
         $('#expanded-image').attr("src", parent.attr("src"));
-    }
-
+    };
 
     function hideAppearingElements() {
         $('.description').hide();
         $('.audio').empty().hide();
         $('.hover-buttons').show();
-    }
-
-    function checkIfLoadMoreRequired() {
-        if (pictures.length > 0) {
-            $('#load-more').show();
-        } else {
-            $('#load-more').hide();
-        }
+    };
+    
+    // Show hover buttons for mobile devices
+    function bindForMobileDevices() {    
+        if ($(window).width() < 992) {
+            $('.hover-buttons').css('opacity', '1');
+            $('.description, .audio').on('click', function () {
+                $('.description').hide();
+                $('.audio').empty().hide();
+                $('.hover-buttons').show();
+            });
+        };
     }
 
     function post(url, payload, callbackReload) {
@@ -183,11 +195,11 @@ $(document).ready(function () {
             .catch(function (error) {
                 console.log(error);
             });
-    }
+    };
 
     function nextPage(url) {
         location.href = url;
-    }
+    };
 
     function get(url, callbackHTML) {
         return fetch(url, {
@@ -204,6 +216,6 @@ $(document).ready(function () {
             .catch(function (error) {
                 console.log(error);
             });
-    }
+    };
 
 });
