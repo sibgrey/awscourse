@@ -15,7 +15,7 @@ $(document).ready(function () {
 
     function loadMore(pictures) {
         let template = $('#picture-item').html();
-        for (var i = 0; i < 6; i++) {
+        for (let i = 0; i < 6; i++) {
             let pictureData = pictures.shift();
             if (pictureData) {
                 $(".row").append(Mustache.render(template, pictureData));
@@ -27,7 +27,7 @@ $(document).ready(function () {
         $('.delete-button').unbind("click").on('click', deletePicture);
         hideAppearingElements();
         bindForMobileDevices();
-    };
+    }
 
     // TO_BE_REMOVED_START
     let pictures = [
@@ -58,9 +58,9 @@ $(document).ready(function () {
     });
 
     $("#upload-file-input").on('change', function () {
-        var file = $(this).prop('files')[0];
+        const file = $(this).prop('files')[0];
         // TO_BE_REMOVED_START
-        var fileDescription = { fileDescription: file.name };
+        const fileDescription = { fileDescription: file.name };
         let alertTemplate = $('#file-uploaded-alert').html();
         $(".header").prepend(Mustache.render(alertTemplate, fileDescription));
         // TO_BE_REMOVED_END
@@ -88,7 +88,7 @@ $(document).ready(function () {
         } else {
             $('#load-more').hide();
         }
-    };
+    }
 
     function openDescription() {
         // TODO: Call POST for description
@@ -104,11 +104,11 @@ $(document).ready(function () {
         });*/
 
         // TO_BE_REMOVED_START
-        var parent = $(this).closest('.picture-card');
+        const parent = $(this).closest('.picture-card');
         parent.find('.hover-buttons').toggle();
         parent.find('.description').addClass('appear-animation').toggle();
         // TO_BE_REMOVED_END
-    };
+    }
 
     function openPlayer() {
         // TODO: Call POST for description
@@ -119,11 +119,11 @@ $(document).ready(function () {
         });*/
 
         // TO_BE_REMOVED_START
-        var parent = $(this).closest('.picture-card');
+        const parent = $(this).closest('.picture-card');
         parent.find('.hover-buttons').toggle();
         parent.find('.audio').addClass('appear-animation').append('<audio id="audio" src="" controls></audio>').toggle();
         // TO_BE_REMOVED_END
-    };
+    }
 
     function deletePicture() {
         // TODO: Call POST for delete
@@ -136,35 +136,31 @@ $(document).ready(function () {
         });*/
 
         // TO_BE_REMOVED_START
-        var parent = $(this).closest('.picture-box');
+        const parent = $(this).closest('.picture-box');
         parent.addClass('delete-animation');
         setTimeout(function () {
             parent.remove();
         }, 500);
         // TO_BE_REMOVED_END
-    };
+    }
 
     function bindExpandedImage() {
-        var parent = $(this).closest('img');
+        const parent = $(this).closest('img');
         $('#expanded-image').attr("src", parent.attr("src"));
-    };
+    }
 
     function hideAppearingElements() {
         $('.description').hide();
         $('.audio').empty().hide();
         $('.hover-buttons').show();
-    };
+    }
     
     // Show hover buttons for mobile devices
     function bindForMobileDevices() {    
         if ($(window).width() < 992) {
             $('.hover-buttons').css('opacity', '1');
-            $('.description, .audio').on('click', function () {
-                $('.description').hide();
-                $('.audio').empty().hide();
-                $('.hover-buttons').show();
-            });
-        };
+            $('.description, .audio').on('click', hideAppearingElements);
+        }
     }
 
     function post(url, payload, callbackReload) {
@@ -179,9 +175,9 @@ $(document).ready(function () {
         })
             .then(function (response) {
                 if (response.status === 404) {
-                    location.href = $window.location.href + '/404';
+                    location.href = window.location.href + '/404';
                 } else if (response.status === 403) {
-                    location.href = $window.location.href + '/403';
+                    location.href = window.location.href + '/403';
                 } else if (response.status === 500) {
                     location.href = window.location.href + '/500';
                 } else if (response.status === 418) {
@@ -195,11 +191,11 @@ $(document).ready(function () {
             .catch(function (error) {
                 console.log(error);
             });
-    };
+    }
 
     function nextPage(url) {
         location.href = url;
-    };
+    }
 
     function get(url, callbackHTML) {
         return fetch(url, {
@@ -216,6 +212,6 @@ $(document).ready(function () {
             .catch(function (error) {
                 console.log(error);
             });
-    };
+    }
 
 });
