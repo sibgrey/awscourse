@@ -1,19 +1,23 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-# upload Cloudwatch configuration, that was uploaded to S3
-echo "Uploading Cloudwatch configuration..."
-sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/tmp/amazon-cloudwatch-agent.json
-# run process in the background, redirect stdin, stdout, stderr to nowhere (/dev/null). nohup redirects input and output to specific file nohup.out
-echo "Trying to run application..."
+# Define the path to the JAR file
+JAR_FILE="/tmp/order-service.jar"
 
-if [ "$DEPLOYMENT_GROUP_NAME" == "billing" ]
-then
-    nohup java -jar -Dspring.profiles.active=dev /tmp/billing-service.jar > /dev/null 2> /dev/null < /dev/null &
-else
-    nohup java -jar -Dspring.profiles.active=dev /tmp/order-service.jar > /dev/null 2> /dev/null < /dev/null &
+# Check if the JAR file exists or not
+if [ ! -f "$JAR_FILE" ]; then
+    echo "Error: JAR file does not exist at specified location: $JAR_FILE"
+    exit 1
 fi
-#else
-#  echo "No running applications was found for the deployment group name!"
-#fi
 
+# Start the Java application
+echo "Starting the application..."
+nohup java -jar "$JAR_FILE" > /home/ec2-user/myapp.log 2>&1 &
+
+# Get the process ID of the last command executed
+PID=$!
+
+# Print the PID of the running application
+echo "Application started with PID: $PID"
+
+# Exit the script
 exit 0
