@@ -11,7 +11,7 @@ echo "Trying to run application..."
     nohup java -jar -Dspring.profiles.active=local /tmp/billing-service.jar > /dev/null 2> /dev/null < /dev/null &
 #else
 #    nohup java -jar -Dspring.profiles.active=dev /tmp/order-service.jar > /dev/null 2> /dev/null < /dev/null &
-fi
+#fi
 #else
 #  echo "No running applications was found for the deployment group name!"
 #fi
